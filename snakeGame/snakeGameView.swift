@@ -62,7 +62,7 @@ struct snakeGameView: View {
                                     .symbolEffect(.pulse) // iOS 17+, si no tens iOS 17, treu aquesta línia
                             } else if viewModel.snake.contains(p) {
                                 Text("🟩")
-                                    .font(.system(size: 23))
+                                    .font(.system(size: 22))
                             }
                         }
                         .aspectRatio(1, contentMode: .fit)
