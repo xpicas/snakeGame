@@ -9,33 +9,33 @@ import SwiftUI
 import Combine
 
 class snakeGameViewModel: ObservableObject {
+    typealias Point = snakeGameModel.Point
+    typealias Direction = snakeGameModel.Direction
+    
     private static func createSnakeGame() -> snakeGameModel {
         return snakeGameModel(columns: 10, rows: 15)
     }
     
     // Límits temps
-    private static let minSeconds: TimeInterval = 0.05
+    private static let minSeconds: TimeInterval = 0.2
     private static let maxSeconds: TimeInterval = 0.7
     
-    
     @Published private var model = createSnakeGame()
+    @Published private(set) var isRunning: Bool = false
+    @Published private(set) var isGameOver: Bool = false
     
     private var timer: AnyCancellable?
     private var seconds = maxSeconds
 
     // MARK: - Accés al model per la View
-    var snake: [snakeGameModel.Point] { model.snake }
-    var food: snakeGameModel.Point { model.food }
-    var points: Int { model.points }
-    var direction: snakeGameModel.Direction { model.direction }
-    var isRunning: Bool = false
-    var isGameOver: Bool = false
+    var snake: Set<Point> { model.snakeSet }
+    var food: Point { model.food }
+    var score: Int { model.score }
+    var direction: Direction { model.direction }
+    var snakeHead: Point? { model.snakeHead }
+    var snakeTail: Point? { model.snakeTail }
     
     // MARK: - Intencions usuari
-
-    func changeDirection(_ newDirection: snakeGameModel.Direction) {
-        model.changeDirection(newDirection)
-    }
 
     func startGame() {
         guard !isRunning else { return }      // evita crear 2 timers
@@ -49,7 +49,23 @@ class snakeGameViewModel: ObservableObject {
         timer = nil
     }
 
+    func restartGame() {
+        stopGame()
+        model = snakeGameViewModel.createSnakeGame()
+        isGameOver = false
+    }
+    
+    func handleSwipe(_ value: DragGesture.Value) {
+        let dx = value.translation.width
+        let dy = value.translation.height
 
+        if abs(dx) > abs(dy) {
+            changeDirection(dx > 0 ? .right : .left)
+        } else {
+            changeDirection(dy > 0 ? .down : .up)
+        }
+    }
+    
     // MARK: - Interns
 
     private func startTimer(_ seconds: TimeInterval) {
@@ -65,12 +81,12 @@ class snakeGameViewModel: ObservableObject {
     }
 
     private func tick() {
-        let oldLength = model.snake.count
+        let oldLength = snake.count
         if model.moveSnake(model.direction){
             stopGame()
             isGameOver = true
         } else { // Si ha menjat (ha pujat punts), accelera una mica
-            if oldLength < model.snake.count {
+            if oldLength < snake.count {
                 increaseSpeed()
             }
         }
@@ -78,10 +94,13 @@ class snakeGameViewModel: ObservableObject {
 
     private func increaseSpeed() {
         if seconds > snakeGameViewModel.minSeconds {
-            seconds -= 0.05
+            seconds -= 0.01
             startTimer(seconds)
         }
     }
-
+    
+    private func changeDirection(_ newDirection: Direction) {
+        model.changeDirection(newDirection)
+    }
 }
 

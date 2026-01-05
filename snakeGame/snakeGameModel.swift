@@ -8,12 +8,16 @@
 import Foundation
 
 struct snakeGameModel{
-    private(set) var snake: [Point]
+    private var snake: [Point] //quan importa l'ordre es fa servir com Array
+    var snakeSet: Set<Point> { Set(snake) } //quan importa la pertinença es fa servir com a Set
+    var snakeHead: Point? { snake.first }
+    var snakeTail: Point? { snake.last }
+    
     private(set) var food: Point
     private(set) var direction = Direction.up
-    private(set) var points: Int = 0
+    private(set) var score: Int = 0
     private(set) var isGameOver: Bool = false
-    
+
     var maxX: Int
     var maxY: Int
     
@@ -32,9 +36,12 @@ struct snakeGameModel{
         food = generateFood()
     }
     
-    struct Point: Equatable {
+    struct Point: Hashable, CustomStringConvertible {
         var x: Int
         var y: Int
+        var description: String {
+            "Point(x: \(x), y: \(y))"
+        }
     }
     
     mutating func initSnake(){
@@ -51,45 +58,29 @@ struct snakeGameModel{
         
         switch direction {
         case .up:
-            if head.y == 0{
-                newHead.y = maxY
-            } else {
-                newHead.y -= 1
-            }
+            if head.y == 0 { newHead.y = maxY - 1 } else { newHead.y -= 1 }
         case .down:
-            if head.y == maxY - 1{
-                newHead.y = 0
-            } else {
-                newHead.y += 1
-            }
+            if head.y == maxY - 1 { newHead.y = 0 } else { newHead.y += 1 }
         case .right:
-            if head.x == maxX - 1{
-                newHead.x = 0
-            } else {
-                newHead.x += 1
-            }
+            if head.x == maxX - 1 { newHead.x = 0 } else { newHead.x += 1 }
         case .left:
-            if head.x == 0{
-                newHead.x = maxX
+            if head.x == 0 { newHead.x = maxX - 1} else { newHead.x -= 1 }
+        }
+                
+        //xoc amb el propi cos
+        if snakeSet.contains(newHead) {
+            isGameOver = true
+            return isGameOver
+        } else {
+            // mou el cos
+            snake.insert(newHead, at: 0)
+            if snake.first == food {
+                food = generateFood()
+                score += 1
             } else {
-                newHead.x -= 1
+                snake.removeLast()
             }
         }
-            
-        //xoc amb el propi cos
-        if snake.contains(newHead) {
-            isGameOver = true
-        }
-        
-        // mou el cos
-        snake.insert(newHead, at: 0)
-        if snake.first == food {
-            food = generateFood()
-            points += 1
-        } else {
-            snake.removeLast()
-        }
-        
         return isGameOver
     }
     
@@ -98,28 +89,28 @@ struct snakeGameModel{
         repeat {
             newFood.x = Int.random(in: 0..<maxX)
             newFood.y = Int.random(in: 0..<maxY)
-        } while snake.contains(newFood)
+        } while snakeSet.contains(newFood)
         return newFood
     }
     
-    mutating func changeDirection(_ newDirection: Direction) {		
+    mutating func changeDirection(_ newDirection: Direction) {
         switch newDirection {
-            case .up:
-                if direction != .down {
-                    direction = .up
-                }
-            case .down:
-                if direction != .up{
-                    direction = .down
-                }
-            case .left:
-                if direction != .right {
-                    direction = .left
-                }
-            case .right:
-                if direction != .left {
-                    direction = .right
-                }
+        case .up:
+            if direction != .down {
+                direction = .up
             }
+        case .down:
+            if direction != .up{
+                direction = .down
+            }
+        case .left:
+            if direction != .right {
+                direction = .left
+            }
+        case .right:
+            if direction != .left {
+                direction = .right
+            }
+        }
     }
 }
